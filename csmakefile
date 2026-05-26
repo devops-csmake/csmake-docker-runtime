@@ -21,7 +21,6 @@
 [~~phases~~]
 clean=Remove all csmake generated files
 package=Create the csmake-docker-runtime package
-test=Run integration tests (requires Docker daemon)
 **sequences=
    clean -> package: build the csmake-docker-runtime install package
 **default=clean -> package
@@ -32,20 +31,24 @@ test=Run integration tests (requires Docker daemon)
 [metadata@csmake-docker-runtime]
 name=csmake-docker-runtime
 version=1.0.0
-description=csmake module for executing commands inside Docker containers
-about=Provides the DockerRuntime csmake module, which discovers and invokes
- the Docker CLI to run containers or build images as part of a csmake build.
+description=Pure-Python library for locating and invoking the Docker CLI
+about=Provides the DockerRuntimeLibrary package, imported by csmake modules
+ (such as csmake-ghactions) that need to run Docker containers as part
+ of a build.
  .
- The docker binary is resolved from: --docker option, DOCKER_BIN env var,
- PATH, and common install paths including Docker Desktop on macOS.
+ The docker binary is resolved from: docker= constructor arg, DOCKER_BIN
+ env var, PATH, and common install paths including Docker Desktop on macOS.
  .
- Supports pre-built images (--image) or on-the-fly builds (--dockerfile),
- with automatic host working-directory mounting, volume mounts, and
- per-step environment variable injection.
+ Supports pre-built images or on-the-fly Dockerfile builds, with automatic
+ host working-directory mounting, volume mounts, and environment injection.
+ .
+ This package is a pure library; it does not install any csmake modules.
+ First-class csmake sections (DockerRuntime@...) will be provided by a
+ separate csmake-docker-runtime-modules package in the future.
 packager=Autumn Patterson <autumn@devops-csmake.com>
 manufacturer=devops-csmake
 depends=python3, csmake
-keywords=make build development docker container
+keywords=make build development docker container library
 url=https://github.com/devops-csmake/csmake-docker-runtime
 copyrights=docker-runtime-copyright
 classifiers=
@@ -55,7 +58,7 @@ classifiers=
     Programming Language :: Python :: 3
     License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 **files=
-    <CsmakeModules (python:csmake-modules)> CsmakeModules/*.py
+    <DockerRuntimeLibrary (python:library)> DockerRuntimeLibrary/*.py
 
 # -----------------------------------------------------------------------
 # Copyright
@@ -87,8 +90,8 @@ path_python-lib=PYTHON
 owner_root=root
 group_root=root
 
-map_CsmakeModules=
-   map: <CsmakeModules> -(1-1)-> {PYTHON}/CsmakeDockerRuntime/CsmakeModules/[~~file~~]
+map_DockerRuntimeLibrary=
+   map: <DockerRuntimeLibrary> -(1-1)-> {PYTHON}/DockerRuntimeLibrary/[~~file~~]
    copyright: docker-runtime-copyright
    owner:{root}
    group:{root}
@@ -113,7 +116,7 @@ value_rc=1
 # -----------------------------------------------------------------------
 [WheelPackage@wheel-docker-runtime]
 package-version=1.0
-top-level=CsmakeDockerRuntime
+top-level=DockerRuntimeLibrary
 maps=docker-runtime-installs
 result=%(RESULTS)s/wheelfile
 
@@ -121,25 +124,6 @@ result=%(RESULTS)s/wheelfile
 package-version=1.0
 maps=docker-runtime-installs
 result=%(RESULTS)s/zipfile
-
-# -----------------------------------------------------------------------
-# Integration tests  (require a running Docker daemon)
-# -----------------------------------------------------------------------
-[DockerRuntime@test-docker-version]
---image=alpine:3
---args=sh -c "echo csmake-docker-runtime OK && docker --version || true"
---workdir=/workspace
-
-[DockerRuntime@test-docker-echo]
---image=alpine:3
---args=echo hello from csmake-docker-runtime
-
-[command@test-docker-runtime]
-description=Run integration tests (requires Docker daemon and network)
-0000=test-docker-echo
-
-[~~test~~]
-00=test-docker-runtime
 
 # -----------------------------------------------------------------------
 # Build commands
