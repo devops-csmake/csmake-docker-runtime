@@ -125,12 +125,17 @@ package-version=1.0
 maps=docker-runtime-installs
 result=%(RESULTS)s/zipfile
 
+[CsmakeModulePackager@csm-docker-runtime]
+result=%(RESULTS)s/csm
+include=
+    DockerRuntimeLibrary/*.py
+
 # -----------------------------------------------------------------------
 # Build commands
 # -----------------------------------------------------------------------
 [command@default]
 description=Create and package a csmake-docker-runtime release
-00=csmake-docker-runtime, wheel-docker-runtime & zip-docker-runtime
+00=csmake-docker-runtime, wheel-docker-runtime & zip-docker-runtime & csm-docker-runtime
 
 [command@wheel-only]
 description=Create a wheel package only
