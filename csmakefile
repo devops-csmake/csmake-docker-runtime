@@ -14,7 +14,152 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # </copyright>
+#====================================================================
+#   csmake-docker-runtime  csmakefile
+#====================================================================
 
 [~~phases~~]
-test=Run integration tests
-clean=Clean build artifacts
+clean=Remove all csmake generated files
+package=Create the csmake-docker-runtime package
+test=Run integration tests (requires Docker daemon)
+**sequences=
+   clean -> package: build the csmake-docker-runtime install package
+**default=clean -> package
+
+# -----------------------------------------------------------------------
+# Package metadata
+# -----------------------------------------------------------------------
+[metadata@csmake-docker-runtime]
+name=csmake-docker-runtime
+version=1.0.0
+description=csmake module for executing commands inside Docker containers
+about=Provides the DockerRuntime csmake module, which discovers and invokes
+ the Docker CLI to run containers or build images as part of a csmake build.
+ .
+ The docker binary is resolved from: --docker option, DOCKER_BIN env var,
+ PATH, and common install paths including Docker Desktop on macOS.
+ .
+ Supports pre-built images (--image) or on-the-fly builds (--dockerfile),
+ with automatic host working-directory mounting, volume mounts, and
+ per-step environment variable injection.
+packager=Autumn Patterson <autumn@devops-csmake.com>
+manufacturer=devops-csmake
+depends=python3, csmake
+keywords=make build development docker container
+url=https://github.com/devops-csmake/csmake-docker-runtime
+copyrights=docker-runtime-copyright
+classifiers=
+    Development Status :: 4 - Beta
+    Intended Audience :: Developers
+    Topic :: Software Development :: Build Tools
+    Programming Language :: Python :: 3
+    License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+**files=
+    <CsmakeModules (python:csmake-modules)> CsmakeModules/*.py
+
+# -----------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------
+[copyright@docker-runtime-copyright]
+disclaimer=
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+license=GPLv3
+holder=Autumn Patterson
+years=2025
+
+# -----------------------------------------------------------------------
+# Install map
+# -----------------------------------------------------------------------
+[installmap@docker-runtime-installs]
+path_root=INSTALL_ROOT
+path_python-lib=PYTHON
+owner_root=root
+group_root=root
+
+map_CsmakeModules=
+   map: <CsmakeModules> -(1-1)-> {PYTHON}/CsmakeDockerRuntime/CsmakeModules/[~~file~~]
+   copyright: docker-runtime-copyright
+   owner:{root}
+   group:{root}
+   permissions:644
+
+# -----------------------------------------------------------------------
+# Versioning
+# -----------------------------------------------------------------------
+[versioning@snapshot-version]
+designation=snapshot
+format={datetime}.{gitSHA}
+shell_datetime=date --utc +%%Y%%m%%d%%H%%M%%S
+shell_gitSHA=git rev-parse HEAD
+
+[versioning@rc-version]
+designation=rc
+format=rc{rc}
+value_rc=1
+
+# -----------------------------------------------------------------------
+# Package targets
+# -----------------------------------------------------------------------
+[WheelPackage@wheel-docker-runtime]
+package-version=1.0
+top-level=CsmakeDockerRuntime
+maps=docker-runtime-installs
+result=%(RESULTS)s/wheelfile
+
+[ZipPackager@zip-docker-runtime]
+package-version=1.0
+maps=docker-runtime-installs
+result=%(RESULTS)s/zipfile
+
+# -----------------------------------------------------------------------
+# Integration tests  (require a running Docker daemon)
+# -----------------------------------------------------------------------
+[DockerRuntime@test-docker-version]
+--image=alpine:3
+--args=sh -c "echo csmake-docker-runtime OK && docker --version || true"
+--workdir=/workspace
+
+[DockerRuntime@test-docker-echo]
+--image=alpine:3
+--args=echo hello from csmake-docker-runtime
+
+[command@test-docker-runtime]
+description=Run integration tests (requires Docker daemon and network)
+0000=test-docker-echo
+
+[~~test~~]
+00=test-docker-runtime
+
+# -----------------------------------------------------------------------
+# Build commands
+# -----------------------------------------------------------------------
+[command@default]
+description=Create and package a csmake-docker-runtime release
+00=csmake-docker-runtime, wheel-docker-runtime & zip-docker-runtime
+
+[command@wheel-only]
+description=Create a wheel package only
+00=csmake-docker-runtime, wheel-docker-runtime
+
+[command@zip-only]
+description=Create a zip package only
+00=csmake-docker-runtime, zip-docker-runtime
+
+[command@snapshot]
+description=Build a snapshot package
+00=csmake-docker-runtime, snapshot-version, default
+
+[command@rc]
+description=Build a release candidate package
+00=csmake-docker-runtime, rc-version, default
